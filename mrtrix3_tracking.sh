@@ -21,6 +21,7 @@ DIFF=`jq -r '.diff' config.json`
 BVAL=`jq -r '.bval' config.json`
 BVEC=`jq -r '.bvec' config.json`
 ANAT=`jq -r '.anat' config.json`
+DIFF_MASK=`jq -r .diff_mask config.json`
 
 ## parse potential ensemble / individual lmaxs
 ENS_LMAX=`jq -r '.ens_lmax' config.json`
@@ -54,6 +55,9 @@ FACT_FIBS=`jq -r '.fact_fibs' config.json`
 # PREMASK option for 5ttgen
 PREMASK=`jq -r '.premask' config.json`
 
+# use optional Diffusion mask input
+USE_DIFF_MASK=`jq -r '.use_diff_mask' config.json`
+
 ##
 ## begin execution
 ##
@@ -72,10 +76,15 @@ echo "Converting raw data into MRTrix3 format..."
 mrconvert -fslgrad $BVEC $BVAL $DIFF ${difm}.mif --export_grad_mrtrix ${difm}.b -force -nthreads $NCORE -quiet
 
 ## create mask of dwi data - use bet for more robust mask
-bet $DIFF bet -R -m -f 0.3
-mrconvert bet_mask.nii.gz ${mask}.mif -force -nthreads $NCORE -quiet
-dwi2mask ${difm}.mif - -force -nthreads $NCORE -quiet | maskfilter - dilate b0_${out}_brain_mask.mif -npass 5 -force -nthreads $NCORE -quiet
-dwi2mask ${difm}.mif ${mask}.mif -force -nthreads $NCORE -quiet
+# TODO threshold the dwi image instead of running BET
+if [ $USE_DIFF_MASK == 'true' ]; then
+    mrconvert $DIFF_MASK ${mask}.mif -force -nthreads $NCORE -quiet
+else
+    bet $DIFF bet -R -m -f 0.3
+    mrconvert bet_mask.nii.gz ${mask}.mif -force -nthreads $NCORE -quiet
+    dwi2mask ${difm}.mif - -force -nthreads $NCORE -quiet | maskfilter - dilate b0_${out}_brain_mask.mif -npass 5 -force -nthreads $NCORE -quiet
+    dwi2mask ${difm}.mif ${mask}.mif -force -nthreads $NCORE -quiet
+fi
 
 ## convert anatomy
 mrconvert $ANAT ${anat}.mif -force -nthreads $NCORE -quiet
