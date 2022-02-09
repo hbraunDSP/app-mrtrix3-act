@@ -81,7 +81,7 @@ dwi2mask ${difm}.mif ${mask}.mif -force -nthreads $NCORE -quiet
 mrconvert $ANAT ${anat}.mif -force -nthreads $NCORE -quiet
 
 ## create b0 
-dwiextract ${difm}.mif - -bzero -nthreads $NCORE -quiet | mrmath - mean b0.mif -axis 3 -force -nthreads $NCORE -quiet
+dwiextract -config BZeroThreshold 50 ${difm}.mif - -bzero -nthreads $NCORE -quiet | mrmath - mean b0.mif -axis 3 -force -nthreads $NCORE -quiet
 
 ## check if b0 volume successfully created
 if [ ! -f b0.mif ]; then
@@ -292,7 +292,7 @@ if [ ! -z $TENSOR_FIT ]; then
     if [ ! -z $TFE ]; then
 	echo "Requested b-value for fitting the tensor, $TENSOR_FIT, exists within the data."
 	echo "Extracting b-${TENSOR_FIT} shell for tensor fit..."    
-	dwiextract ${difm}.mif ${difm}_ten.mif -bzero -shell ${EB0}${TENSOR_FIT} -force -nthreads $NCORE -quiet
+	dwiextract -config BZeroThreshold 50 ${difm}.mif ${difm}_ten.mif -bzero -shell ${EB0}${TENSOR_FIT} -force -nthreads $NCORE -quiet
 	dift=${difm}_ten
     else
 	echo "Requested b-value for fitting the tensor, $TENSOR_FIT, does not exist within the data."
@@ -350,7 +350,7 @@ echo "Creating 5-Tissue-Type (5TT) tracking mask..."
 if [ $MS -eq 0 ]; then
     
     echo "Estimating CSD response function..."
-    time dwi2response tournier ${difm}.mif wmt.txt -lmax $RMAX -force -nthreads $NCORE -scratch ./tmp -quiet
+    time dwi2response tournier ${difm}.mif wmt.txt -lmax $LMAXS -force -nthreads $NCORE -scratch ./tmp -quiet
     
 else
 
