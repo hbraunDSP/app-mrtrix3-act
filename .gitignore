@@ -1,3 +1,9 @@
 *~
 config.json
 
+*.nii.gz
+track.tck
+wmt.txt
+tckinfo.txt
+dwi.b
+response.txt
